@@ -77,23 +77,57 @@ std::pair<std::set<std::string>, std::set<std::string> > parseDict(std::string f
 
 std::set<std::string> boggle(const std::set<std::string>& dict, const std::set<std::string>& prefix, const std::vector<std::vector<char> >& board)
 {
-	std::set<std::string> result;
-	for(unsigned int i=0;i<board.size();i++)
-	{
-		for(unsigned int j=0;j<board.size();j++)
-		{
-			boggleHelper(dict, prefix, board, "", result, i, j, 0, 1);
-			boggleHelper(dict, prefix, board, "", result, i, j, 1, 0);
-			boggleHelper(dict, prefix, board, "", result, i, j, 1, 1);
-		}
-	}
-	
-	return result;
+    std::set<std::string> result;
+    std::vector<std::vector<bool>> visited(board.size(), std::vector<bool>(board.size(), false));
+    std::string longestWordInPath;
+
+    for (unsigned int i = 0; i < board.size(); i++) {
+        for (unsigned int j = 0; j < board.size(); j++) {
+            longestWordInPath = "";
+            boggleHelper(dict, prefix, board, "", result, i, j, 0, 1, visited, longestWordInPath);  // Right
+            longestWordInPath = "";
+            boggleHelper(dict, prefix, board, "", result, i, j, 1, 0, visited, longestWordInPath);  // Down
+            longestWordInPath = "";
+            boggleHelper(dict, prefix, board, "", result, i, j, 1, 1, visited, longestWordInPath);  // Diagonal Down-Right
+            // Add other directions as needed
+        }
+    }
+    
+    return result;
 }
 
-bool boggleHelper(const std::set<std::string>& dict, const std::set<std::string>& prefix, const std::vector<std::vector<char> >& board, 
-								   std::string word, std::set<std::string>& result, unsigned int r, unsigned int c, int dr, int dc)
-{
-//add your solution here!
 
+bool boggleHelper(const std::set<std::string>& dict, const std::set<std::string>& prefix, const std::vector<std::vector<char> >& board, 
+                                   std::string word, std::set<std::string>& result, unsigned int r, unsigned int c, int dr, int dc, 
+                                   std::vector<std::vector<bool>>& visited, std::string& longestWordInPath)
+{
+    if (r >= board.size() || c >= board.size() || visited[r][c]) {
+        return false;
+    }
+    
+    word += board[r][c];
+    visited[r][c] = true;
+    bool isWord = false;
+
+    // Check if it's a valid prefix
+    if (prefix.find(word) != prefix.end()) {
+        // Check if it's a complete, valid word
+        if (dict.find(word) != dict.end()) {
+            isWord = true;
+            if (word.length() > longestWordInPath.length()) {
+                longestWordInPath = word; // Update the longest word found in this path
+            }
+        }
+
+        // Explore further in the same direction
+        boggleHelper(dict, prefix, board, word, result, r + dr, c + dc, dr, dc, visited, longestWordInPath);
+    }
+
+    // After exploring all possible extensions, if the current word is the longest and valid, add it
+    if (isWord && word == longestWordInPath) {
+        result.insert(word);
+    }
+
+    visited[r][c] = false; // Unmark the cell after exploration
+    return true;
 }
